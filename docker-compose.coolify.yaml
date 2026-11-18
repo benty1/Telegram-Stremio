@@ -1,0 +1,36 @@
+# Telegram-Stremio (weebzone) on Coolify
+#
+# Coolify resource settings:
+#   Build pack ............ Docker Compose
+#   Compose file .......... /docker-compose.coolify.yaml
+#   Domain (service) ...... https://tg.685stream.io:8000   (":8000" = container port, not part of the public URL)
+#   Network ............... enable "Connect to Predefined Network" so it can reach the standalone MongoDB
+#
+# Values for the ${...} variables go in Coolify's Environment Variables tab.
+# The app reads these straight from the environment (Backend/config.py), no config.env needed.
+# Everything below DATABASE only seeds the web panel on the FIRST start; after that the panel is the source of truth.
+
+services:
+  telegram-stremio:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "8000"            # Traefik routes the domain here; nothing is published on the host
+    environment:
+      API_ID: ${API_ID:?}
+      API_HASH: ${API_HASH:?}
+      BOT_TOKEN: ${BOT_TOKEN:?}
+      OWNER_ID: ${OWNER_ID:?}
+      DATABASE: ${DATABASE:?}               # exactly 2 Mongo URIs, comma-separated: tracking,storage_1
+      PORT: "8000"
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?}   # replaces the default admin/admin panel login
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?}
+      BASE_URL: ${BASE_URL:?}               # e.g. https://tg.685stream.io
+      TMDB_API: ${TMDB_API:-}               # optional, can be set in the panel later
+      AUTH_CHANNEL: ${AUTH_CHANNEL:-}       # optional, comma-separated channel IDs (-100...)
+      UPSTREAM_REPO: ""                     # keep empty: when set, update.py runs `git reset --hard` on every start
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
